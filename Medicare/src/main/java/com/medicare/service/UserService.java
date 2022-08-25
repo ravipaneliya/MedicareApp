@@ -46,6 +46,7 @@ public class UserService {
 			old.setName(user.getName());
 			old.setEmail(user.getEmail());
 			old.setPassword(user.getPassword());
+			old.setIsadmin(user.getIsadmin());
 			old.setPhoneno(user.getPhoneno());
 			return repo.save(old);
 		} else

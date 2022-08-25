@@ -1,14 +1,12 @@
 package com.medicare.model;
 
 import java.util.Date;
-import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
@@ -23,22 +21,20 @@ public class Cart {
 	@JoinColumn(name = "user_id")
 	private User user;
 	
-	@ManyToMany(cascade = CascadeType.ALL)
+	@ManyToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "product_id")
-	private Set<Product> cartItems;
+	private Product cartItem;
 	
 	private Date cartDate;
-	private double cartTotal;
 	
 	public Cart() {
 	}
 
-	public Cart(User user, Set<Product> cartItems, Date cartDate, double cartTotal) {
+	public Cart(User user, Product cartItem, Date cartDate) {
 		super();
 		this.user = user;
-		this.cartItems = cartItems;
+		this.cartItem = cartItem;
 		this.cartDate = cartDate;
-		this.cartTotal = cartTotal;
 	}
 
 	public int getId() {
@@ -57,12 +53,12 @@ public class Cart {
 		this.user = user;
 	}
 
-	public Set<Product> getCartItems() {
-		return cartItems;
+	public Product getCartItem() {
+		return cartItem;
 	}
 
-	public void setCartItems(Set<Product> cartItems) {
-		this.cartItems = cartItems;
+	public void setCartItem(Product cartItem) {
+		this.cartItem = cartItem;
 	}
 
 	public Date getCartDate() {
@@ -71,13 +67,5 @@ public class Cart {
 
 	public void setCartDate(Date cartDate) {
 		this.cartDate = cartDate;
-	}
-
-	public double getCartTotal() {
-		return cartTotal;
-	}
-
-	public void setCartTotal(double cartTotal) {
-		this.cartTotal = cartTotal;
 	}
 }

@@ -21,7 +21,7 @@ public class Product {
 	private String name;
 	private String companyname;
 	private String description;
-	private BigDecimal price;
+	private double price;
 	private boolean isactive;
 	
 	@ManyToOne(cascade = CascadeType.ALL)
@@ -31,7 +31,7 @@ public class Product {
 	public Product() {
 	}
 
-	public Product(String name, String companyname, String description, BigDecimal price, boolean isactive, Category category) {
+	public Product(String name, String companyname, String description, double price, boolean isactive, Category category) {
 		super();
 		this.name = name;
 		this.companyname = companyname;
@@ -73,11 +73,11 @@ public class Product {
 		this.description = description;
 	}
 
-	public BigDecimal getPrice() {
+	public double getPrice() {
 		return price;
 	}
 
-	public void setPrice(BigDecimal price) {
+	public void setPrice(double price) {
 		this.price = price;
 	}
 	

@@ -1,6 +1,10 @@
 package com.medicare.controller;
 
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,10 +17,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.medicare.model.User;
+import com.medicare.service.CartService;
 import com.medicare.service.CategoryService;
+import com.medicare.service.OrderService;
 import com.medicare.service.ProductService;
 import com.medicare.service.UserService;
+import com.medicare.model.Cart;
 import com.medicare.model.Category;
+import com.medicare.model.Order;
 import com.medicare.model.Product;
 
 @RestController
@@ -30,18 +38,24 @@ public class MainController {
 	
 	@Autowired
 	CategoryService categoryService;
+	
+	@Autowired
+	CartService cartService;
+	
+	@Autowired
+	OrderService orderService;
 
+//	========================: USER CONTROLLERS : ========================
 	@PostMapping("/login")
 	public ResponseEntity<Object> authUser(@RequestParam String username,@RequestParam String password) {
 		User user = userService.authenticateUser(username, password);
-
+		
 		if (user != null && user.getId() > 0)
 			return new ResponseEntity<Object>(user, HttpStatus.FOUND);
 		else
 			return new ResponseEntity<Object>("Invalid Username or Password...!!", HttpStatus.NOT_FOUND);
 	}
-
-//	========================: USER CONTROLLERS : ========================
+	
 	@GetMapping("/user")
 	public List<User> getAllUsers() {
 		return userService.getAllUsers();
@@ -102,16 +116,7 @@ public class MainController {
 
 	@PostMapping("/admin/product")
 	public ResponseEntity<Object> addProduct(@RequestBody Product prod) {
-		Category newCategory = prod.getCategory();
-		if(newCategory != null) {
-			Category category = categoryService.getCategoryById(newCategory.getId());
-			if (category == null || category.getId() == 0) {
-				newCategory = new Category(newCategory.getName(), newCategory.getType());
-				newCategory = categoryService.addCategory(newCategory);
-			} else {
-				newCategory = category;
-			}
-		}
+		Category newCategory = getCategoryByObject(prod.getCategory());
 		
 		prod = new Product(prod.getName(), prod.getCompanyname(), prod.getDescription(), prod.getPrice(), prod.isIsactive(), newCategory);
 		Product newProd = prodService.addProduct(prod);
@@ -140,7 +145,84 @@ public class MainController {
 //	========================: CATEGORY CONTROLLERS : ========================
 	
 //	========================: CART CONTROLLERS : ========================
+
+	@PostMapping("/cart")
+	public ResponseEntity<Object> addToCart(@RequestBody Cart cart) {
+		Cart addedCart = cartService.addCart(new Cart(getUserByObject(cart.getUser()), getProductByObject(cart.getCartItem()), new Date()));
+		
+		if (addedCart != null)
+			return new ResponseEntity<Object>(addedCart, HttpStatus.CREATED);
+		else
+			return new ResponseEntity<Object>("Error while adding item to Cart", HttpStatus.INTERNAL_SERVER_ERROR);
+	}
 	
+	@GetMapping("/cart")
+	public List<Cart> getCartsByUserId(@RequestParam int userid){
+		return cartService.getCartItemsByUser(userService.getUserById(userid));
+	}
+	
+	@DeleteMapping("/cart/{id}")
+	public ResponseEntity<Object> deleteCart(@PathVariable int id) {
+		if(cartService.deleteCart(id))
+			return new ResponseEntity<Object>("Cart Item Is Successfully Deleted", HttpStatus.FOUND);
+		else
+			return new ResponseEntity<Object>("Cart Item is not available with given id : " + id, HttpStatus.NOT_FOUND);
+	}
 //	========================: ORDER CONTROLLERS : ========================
+
+	@PostMapping("/order")
+	public ResponseEntity<Object> addOrder(@RequestBody Order order){
+		Set<Product> items = new HashSet<Product>();
+		double orderTotal = 0;
+		for(Product prod : order.getOrderItems()) {
+			prod = getProductByObject(prod);
+			orderTotal += prod.getPrice();
+			items.add(prod);
+		}
+		
+		Order addedOrder = orderService.addOrder(new Order(getUserByObject(order.getUser()), items, new Date(), orderTotal, false));
+		
+		if (addedOrder != null)
+			return new ResponseEntity<Object>(addedOrder, HttpStatus.CREATED);
+		else
+			return new ResponseEntity<Object>("Error while adding items from Cart to Order.", HttpStatus.INTERNAL_SERVER_ERROR);
+	}
 	
+	@GetMapping("/order")
+	public List<Order> getOrdersByUserId(@RequestParam int userid){
+		return orderService.getOrdersByUserId(userid);
+	}
+
+//	========================: OTHER METHODS : ============================
+	public Category getCategoryByObject(Category newCategory) {
+		Category category = categoryService.getCategoryById(newCategory.getId());
+		if (category == null || category.getId() == 0) {
+			newCategory = new Category(newCategory.getName(), newCategory.getType());
+			return  categoryService.addCategory(newCategory);
+		} else {
+			return category;
+		}
+	}
+	
+	public Product getProductByObject(Product newProduct) {
+		Product prod = prodService.getProductById(newProduct.getId());
+		if (prod == null || prod.getId() == 0) {
+			newProduct = new Product(newProduct.getName(), newProduct.getCompanyname(), 
+					newProduct.getDescription(), newProduct.getPrice(), newProduct.isIsactive(), getCategoryByObject(newProduct.getCategory()));
+			return prodService.addProduct(newProduct);
+		} else {
+			return prod;
+		}
+	}
+	
+	public User getUserByObject(User newUser) {
+		User user = userService.getUserById(newUser.getId());
+		if(user != null && user.getId() == 0) {
+			newUser = new User(newUser.getName(), newUser.getEmail(), newUser.getPassword(), newUser.getIsadmin(), newUser.getPhoneno());
+			return userService.addUser(newUser);
+		} else {
+			return user;
+		}
+	}
+//	======================================================================
 }
